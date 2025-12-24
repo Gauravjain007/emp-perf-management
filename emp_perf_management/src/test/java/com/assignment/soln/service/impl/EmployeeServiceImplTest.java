@@ -1,14 +1,12 @@
 package com.assignment.soln.service.impl;
 
-import com.assignment.soln.model.dto.EmployeeDetailsDTO;
-import com.assignment.soln.model.entity.Employee;
-import com.assignment.soln.model.mapper.EmployeeMapper;
-import com.assignment.soln.repository.EmployeeRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.*;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.jpa.domain.Specification;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -16,9 +14,23 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import com.assignment.soln.model.dto.EmployeeDTO;
+import com.assignment.soln.model.dto.EmployeeDetailsDTO;
+import com.assignment.soln.model.entity.Employee;
+import com.assignment.soln.model.mapper.EmployeeMapper;
+import com.assignment.soln.model.mapper.PerformanceReviewMapper;
+import com.assignment.soln.repository.EmployeeRepository;
+import com.assignment.soln.repository.PerformanceReviewRepository;
 
 @SpringBootTest
 class EmployeeServiceImplTest {
@@ -28,6 +40,12 @@ class EmployeeServiceImplTest {
 
     @Mock
     private EmployeeMapper employeeMapper;
+
+    @Mock
+    private PerformanceReviewRepository performanceReviewRepository;
+
+    @Mock
+    private PerformanceReviewMapper performanceReviewMapper;
 
     @InjectMocks
     private EmployeeServiceImpl employeeServiceImpl;
@@ -46,12 +64,12 @@ class EmployeeServiceImplTest {
         List<String> projects = Arrays.asList("ProjectA");
 
         Employee emp = new Employee();
-        EmployeeDetailsDTO dto = new EmployeeDetailsDTO();
+        EmployeeDTO dto = new EmployeeDTO();
 
         when(employeeRepository.findAll(any(Specification.class))).thenReturn(Collections.singletonList(emp));
         when(employeeMapper.toDto(emp)).thenReturn(dto);
 
-        List<EmployeeDetailsDTO> result = employeeServiceImpl.getEmployees(score, reviewDate, departments, projects);
+        List<EmployeeDTO> result = employeeServiceImpl.getEmployees(score, reviewDate, departments, projects);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -65,7 +83,7 @@ class EmployeeServiceImplTest {
     void testGetEmployees_EmptyResult() {
         when(employeeRepository.findAll(any(Specification.class))).thenReturn(Collections.emptyList());
 
-        List<EmployeeDetailsDTO> result = employeeServiceImpl.getEmployees(null, null, null, null);
+        List<EmployeeDTO> result = employeeServiceImpl.getEmployees(null, null, null, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -78,23 +96,24 @@ class EmployeeServiceImplTest {
         EmployeeDetailsDTO dto = new EmployeeDetailsDTO();
 
         when(employeeRepository.findById(id)).thenReturn(Optional.of(emp));
-        when(employeeMapper.toDto(emp)).thenReturn(dto);
+        when(employeeMapper.toDetailsDto(emp)).thenReturn(dto);
+        when(performanceReviewRepository.findTop3ByEmployeeOrderByReviewDateDesc(emp))
+                .thenReturn(Collections.emptyList());
+        when(performanceReviewMapper.toDTOList(Collections.emptyList())).thenReturn(Collections.emptyList());
 
-        EmployeeDetailsDTO result = employeeServiceImpl.getEmployeeDetails(id);
+        ResponseEntity<EmployeeDetailsDTO> result = employeeServiceImpl.getEmployeeDetails(id);
 
         assertNotNull(result);
-        assertSame(dto, result);
+        assertSame(HttpStatus.OK, result.getStatusCode());
         verify(employeeRepository).findById(id);
-        verify(employeeMapper).toDto(emp);
+        verify(employeeMapper).toDetailsDto(emp);
     }
 
     @Test
-    void testGetEmployeeDetails_ThrowsExceptionIfNotFound() {
+    void testGetEmployeeDetails_ReturnsNotFound() {
         Long id = 2L;
         when(employeeRepository.findById(id)).thenReturn(Optional.empty());
-
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> employeeServiceImpl.getEmployeeDetails(id));
-        assertEquals("Employee not found", ex.getMessage());
-        verify(employeeRepository).findById(id);
+        ResponseEntity<EmployeeDetailsDTO> responseEntity = employeeServiceImpl.getEmployeeDetails(id);
+        assertEquals(HttpStatus.NOT_FOUND, responseEntity.getStatusCode());
     }
 }

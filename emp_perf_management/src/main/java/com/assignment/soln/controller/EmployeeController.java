@@ -5,12 +5,14 @@ import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.assignment.soln.model.dto.EmployeeDTO;
 import com.assignment.soln.model.dto.EmployeeDetailsDTO;
 import com.assignment.soln.service.EmployeeService;
 
@@ -33,7 +35,7 @@ public class EmployeeController {
      * @return a list of employees matching the given criteria
      */
     @GetMapping
-    public List<EmployeeDetailsDTO> getEmployees(
+    public List<EmployeeDTO> getEmployees(
             @RequestParam(required = false) Integer score,
             @RequestParam(required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate reviewDate,
             @RequestParam(required = false) List<String> departments,
@@ -49,7 +51,7 @@ public class EmployeeController {
      * @return the employee details
      */
     @GetMapping("/{id}")
-    public EmployeeDetailsDTO getEmployeeById(@PathVariable Long id) {
+    public ResponseEntity<EmployeeDetailsDTO> getEmployeeById(@PathVariable Long id) {
         return employeeService.getEmployeeDetails(id);
     }
 }

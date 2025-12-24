@@ -3,6 +3,9 @@ package com.assignment.soln.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
+
+import com.assignment.soln.model.dto.EmployeeDTO;
 import com.assignment.soln.model.dto.EmployeeDetailsDTO;
 
 public interface EmployeeService {
@@ -16,7 +19,7 @@ public interface EmployeeService {
      * @param projects    the target projects
      * @return a list of employees matching the given criteria
      */
-    public List<EmployeeDetailsDTO> getEmployees(Integer score, LocalDate reviewDate, List<String> departments,
+    public List<EmployeeDTO> getEmployees(Integer score, LocalDate reviewDate, List<String> departments,
             List<String> projects);
 
     /**
@@ -25,5 +28,5 @@ public interface EmployeeService {
      * @param id the employee ID
      * @return the employee details
      */
-    public EmployeeDetailsDTO getEmployeeDetails(Long id);
+    public ResponseEntity<EmployeeDetailsDTO> getEmployeeDetails(Long id);
 }
